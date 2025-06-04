@@ -1,0 +1,37 @@
+version: "3.8"
+
+services:
+  gitea:
+    image: gitea/gitea:latest
+    container_name: gitea
+    environment:
+      - USER_UID=1000
+      - USER_GID=1000
+      - GITEA__database__DB_TYPE=postgres
+      - GITEA__database__HOST=gitea-db:5432
+      - GITEA__database__NAME=gitea
+      - GITEA__database__USER=gitea
+      - GITEA__database__PASSWD=root  # 替换为你的密码
+    restart: unless-stopped
+    volumes:
+      - ./data/gitea:/data
+      - ./config/gitea:/etc/gitea
+      - /etc/timezone:/etc/timezone:ro
+      - /etc/localtime:/etc/localtime:ro
+    ports:
+      - "3001:3000"
+      - "2222:22"
+    depends_on:
+      gitea-db:
+        condition: service_healthy
+  gitea-db:
+    image: postgres:latest
+    container_name: gitea_db
+    environment:
+      - POSTGRES_USER=gitea
+      - POSTGRES_PASSWORD=root # 这里替换成你的密码
+    healthcheck:  # 添加健康检查
+      test: ["CMD-SHELL", "pg_isready -U gitea"]
+      interval: 5s
+      timeout: 5s
+      retries: 5
